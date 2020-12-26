@@ -1,0 +1,22 @@
+parameters:
+  buildConfiguration: 'Release'
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - ${{ parameters.buildConfiguration }}'
+  inputs:
+    command: 'build'
+    arguments: '--no-restore --configuration ${{ parameters.buildConfiguration }}'
+    projects: '**/*.csproj'
+
+# by default the otput of the build remains on the temporaray build server.
+# i can store build artifacts in pipeline
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish the project - ${{ parameters.buildConfiguration }}'
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+    publishWebProjects: false
+    arguments: '--no-build --configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.buildConfiguration }}'
+    zipAfterPublish: true
