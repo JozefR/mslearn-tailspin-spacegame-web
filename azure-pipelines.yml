@@ -1,6 +1,8 @@
 trigger:
 - '*'
 
+# demands specify that i need node.js package manager
+# installed on the build system
 pool:
   vmImage: 'ubuntu-18.04'
   demands:
@@ -9,6 +11,8 @@ pool:
 variables:
   buildConfiguration: 'Release'
 
+# in case of not installed required build tools. 
+# version that needs to be used on the build agent.
 steps:
 - task: UseDotNet@2
   displayName: 'Use .NET Core SDK 3.1.300'
