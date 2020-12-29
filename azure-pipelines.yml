@@ -1,59 +1,67 @@
 trigger:
 - '*'
 
-# demands specify that i need node.js package manager
-# installed on the build system
-pool:
-  vmImage: 'ubuntu-18.04'
-  demands:
-  - npm
-
 variables:
   buildConfiguration: 'Release'
-  wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
-  dotnetSdkVersion: '3.1.300'
 
-# in case of not installed required build tools. 
-# version that needs to be used on the build agent.
-steps:
-- task: UseDotNet@2
-  displayName: 'Use .NET Core SDK $(dotnetSdkVersion)'
-  inputs:
-    packageType: sdk
-    version: $(dotnetSdkVersion)
+stages:
+- stage: 'Build'
+  displayName: 'Build the web application'
+  jobs:
+  - job: 'Build'
+    displayName: 'Build job'
+    # demands specify that i need node.js package manager
+    # installed on the build system
+    pool:
+      vmImage: 'ubuntu-18.04'
+      demands:
+      - npm
 
-- task: Npm@1
-  displayName: 'Run npm install'
-  inputs:
-    verbose: false
+    variables:
+      wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
+      dotnetSdkVersion: '3.1.300'
 
-- script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
-  displayName: 'Compile Sass assets'
+    # in case of not installed required build tools. 
+    # version that needs to be used on the build agent.
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core SDK $(dotnetSdkVersion)'
+      inputs:
+        packageType: sdk
+        version: $(dotnetSdkVersion)
 
-- task: gulp@1
-  displayName: 'Run gulp tasks'
+    - task: Npm@1
+      displayName: 'Run npm install'
+      inputs:
+        verbose: false
 
-# Build. build in variables that the system provides for use in my pipelines.
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
-  displayName: 'Write build info'
-  workingDirectory: $(wwwrootDir)
+    - script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
+      displayName: 'Compile Sass assets'
 
-# dotnet restore
-- task: DotNetCoreCLI@2
-  displayName: 'Restore project dependencies'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+    - task: gulp@1
+      displayName: 'Run gulp tasks'
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Debug'
+    # Build. build in variables that the system provides for use in my pipelines.
+    - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+      displayName: 'Write build info'
+      workingDirectory: $(wwwrootDir)
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Release'
+    # dotnet restore
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore project dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
-  # The condition argument specifies to run the task only when the previous task succeeds.
-  condition: succeeded()
+    - template: templates/build.yml
+      parameters:
+        buildConfiguration: 'Debug'
+
+    - template: templates/build.yml
+      parameters:
+        buildConfiguration: 'Release'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      # The condition argument specifies to run the task only when the previous task succeeds.
+      condition: succeeded()
